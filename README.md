@@ -13,5 +13,8 @@ https://observablehq.com/@steren/your-co2-emissions-from-location-history
 4. Install the dependencies:
    pip install python-dateutil
 5. Run this tool, save the output to a CSV file:
-   python3 carbon_timeline.py takeout-20210804T142059Z-001.zip > carbon.csv
+   ```
+   $ python3 carbon_timeline.py takeout-20210804T142059Z-001.zip > month.csv
+   $ python3 carbon_timeline.py  --resolution=YEAR takeout-20210804T142059Z-001.zip > year.csv
+   ```
 6. Open in your favorite spreasheet app.
