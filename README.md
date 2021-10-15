@@ -19,5 +19,10 @@ https://observablehq.com/@steren/your-co2-emissions-from-location-history
    ```
 6. Open in your favorite spreasheet app.
 
+To troubleshoot any data weirdness (I had many), use the debug mode that will give you a list of trips with starting timestamp and transportation mean:
+
+```
+$ python3 carbon_timeline.py --debug takeout-20210804T142059Z-001.zip
+```
 
 Sample usage [in French](https://abeilles-neudorf.blogspot.com/2021/09/bilan-carbone-avec-google-maps.html).
