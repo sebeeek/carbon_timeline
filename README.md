@@ -18,3 +18,6 @@ https://observablehq.com/@steren/your-co2-emissions-from-location-history
    $ python3 carbon_timeline.py  --resolution=YEAR takeout-20210804T142059Z-001.zip > year.csv
    ```
 6. Open in your favorite spreasheet app.
+
+
+Sample usage [in French](https://abeilles-neudorf.blogspot.com/2021/09/bilan-carbone-avec-google-maps.html).
