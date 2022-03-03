@@ -10,8 +10,7 @@ import tempfile
 import zipfile
 
 import dateutil
-from dateutil import relativedelta
-
+from dateutil import relativedelta, parser
 
 # We're only counting here the emissions from the fuel burnt, not including
 # the car manufacturing.
@@ -38,7 +37,7 @@ class CarbonTimeline:
 
     p = pathlib.Path(temp_dir.name)
     json_files = list(p.glob("**/*.json"))
-    # json_files = list(p.glob("**/2020_*.json"))
+    # json_files = list(p.glob("**/2019_*.json"))
     clean_activities = self.extract_activities(json_files)
     if debug:
       self.print_csv_activities(clean_activities)
@@ -71,17 +70,16 @@ class CarbonTimeline:
               clean = self.clean_fields(my_dict)
               if clean is not None:
                 activities.append(clean)
-    activities.sort(key=lambda x: int(x["ts"]))
+    activities.sort(key=lambda x: x["ts"])
     return activities
 
   def print_csv_activities(self, clean_activities):
     """Useful for debugging."""
 
-    print("ts, epoch, type, distance")
+    print("ts, type, distance")
     for i in clean_activities:
-      print("%s, %s, %s, %s" %
-            (self.print_timestamp(self.parse_timestamp(int(i["ts"])),
-                                  "SECOND"), i["ts"], i["type"], i["distance"]))
+      print("%s, %s, %s" %
+            (i["ts"], i["type"], i["distance"]))
 
   def clean_fields(self, activity_segment):
     """Converts activity_segment to something usable.
@@ -92,15 +90,14 @@ class CarbonTimeline:
     Returns:
       A cleaner dict like
       {
-        ts: timestamp in ms
+        ts: timestamp as a datetime object like "2022-02-01T12:09:32.412Z"
         distance: distance in km
         type: activity like AIR, RAIL, ROAD
       },
       None if carbon neutral,
     """
     clean = {}
-    clean["ts"] = int(activity_segment["activitySegment"]["duration"][
-        "startTimestampMs"])
+    clean["ts"] = dateutil.parser.parse(activity_segment["activitySegment"]["duration"]["startTimestamp"])
     if "distance" not in activity_segment["activitySegment"]:
       return None
     clean["distance"] = activity_segment["activitySegment"]["distance"] // 1000
@@ -111,19 +108,6 @@ class CarbonTimeline:
     if clean["type"] is None:
       return None
     return clean
-
-  def parse_timestamp(self, epoch):
-    """Returns a timestamp from the number of ms since 1970.
-
-    Args:
-      epoch: number of milliseconds since 1970.
-
-    Returns:
-      A datetime object.
-    """
-    epoch = math.floor(epoch / 1000)
-    ts = datetime.datetime.fromtimestamp(epoch, tz=datetime.timezone.utc)
-    return ts
 
   def print_timestamp(self, timestamp, resolution):
     if resolution == "MONTH":
@@ -156,12 +140,12 @@ class CarbonTimeline:
       air_co2:, road_co2:, rail_co2: }}
     """
     results = collections.OrderedDict()
-    current = self.parse_timestamp(clean_activities[0]["ts"]).replace(
+    current = clean_activities[0]["ts"].replace(
         day=1, hour=0, minute=0, second=0, microsecond=0)
     if resolution == "YEAR":
-      current = self.parse_timestamp(clean_activities[0]["ts"]).replace(
+      current = clean_activities[0]["ts"].replace(
           day=1, month=1, hour=0, minute=0, second=0, microsecond=0)
-    last_timestamp = self.parse_timestamp(clean_activities[-1]["ts"])
+    last_timestamp = clean_activities[-1]["ts"]
     # Create empty entries for all months/years.
     while current < last_timestamp:
       results[self.print_timestamp(current, resolution)] = {
@@ -179,7 +163,7 @@ class CarbonTimeline:
 
     # Sum up the distances in the right categories.
     for act in clean_activities:
-      short = self.print_timestamp(self.parse_timestamp(act["ts"]), resolution)
+      short = self.print_timestamp(act["ts"], resolution)
       result = results[short]
       if act["type"] == "AIR":
         result["air_km"] = result["air_km"] + act["distance"]
